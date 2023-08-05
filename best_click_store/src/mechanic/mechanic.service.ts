@@ -99,7 +99,13 @@ export class MechanicService {
 
     //Show Mechanic Profile
     getProfile(email) {
-        return this.mechanicRepo.findOne({ where: { mechanic_email: email }, relations: { profile: true } });
+        return this.mechanicRepo.findOne({
+            where: { mechanic_email: email },
+            relations: {
+                profile: true,
+                services: true,
+            }
+        });
     }
 
 

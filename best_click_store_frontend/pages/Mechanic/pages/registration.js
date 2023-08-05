@@ -24,6 +24,8 @@ export default function Registration() {
     const [mechanic_password, setPassword] = useState('');
     const [mechanic_cpassword, setCPassword] = useState('');
     const [profile, setprofile] = useState('');
+    const [success, setSuccess] = useState('');
+    
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -40,7 +42,6 @@ export default function Registration() {
     const [passwordError, setPasswordError] = useState('');
     const [cpassError, setCpassError] = useState('');
     const [profileError, setProfileError] = useState('');
-    const [error, setError] = useState('');
 
 
 
@@ -76,7 +77,6 @@ export default function Registration() {
         setCPassword(e.target.value);
     };
     const handleChangeProfile = (e) => {
-        console.log(e.target.files[0]);
         setprofile(e.target.files[0]);
     };
 
@@ -186,17 +186,11 @@ export default function Registration() {
         }
 
         
-        if(setNameError == setEmailError == setPhoneError == setGenderError == setAddressError == setNidError == setPasswordError
-            == setCpassError == setProfileError == '') {
+        if(mechanic_name && mechanic_email && mechanic_nid && mechanic_phone && mechanic_address && mechanic_gender && mechanic_password && mechanic_cpassword && profile) {
             const res = await register();
-
-            console.log(res);
-
-            console.log('Registration successfull');
-            
-
+        
+            setSuccess('Registration successfull')
         }
-        console.log({error});
     };
 
 
@@ -213,9 +207,9 @@ export default function Registration() {
             formData.append('profile', document.querySelector('#profile').files[0]);
             
             const response = await axios.post('http://localhost:3000/mechanic/registration', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
             });
             const data = response.data;
             console.log(data);
@@ -227,7 +221,7 @@ export default function Registration() {
 
 
     const isValidName = (name) => {
-        const namePattern = /^[a-zA-Z][a-zA-Z\-\.\s]{2,150}$/;
+        const namePattern = /^[a-zA-Z][a-zA-Z\-\.\s]{1,150}$/;
         return namePattern.test(name);
     }
     
@@ -245,7 +239,7 @@ export default function Registration() {
 
 
     const isValidNid = (nid) => {
-        const phonePattern = /^[0-9]{10}$/;
+        const phonePattern = /^[1-9][0-9]{9}$/;
         return phonePattern.test(nid);
     }
     
@@ -324,8 +318,8 @@ export default function Registration() {
                                 <label for='profile'>Select Profile Picture</label><br/>
                                 <input type='file' name='profile' id='profile' onChange={handleChangeProfile}/>
                                 <br/>{profileError && <b>{profileError}</b>}
-
-                                {error && <b>{error}</b>}
+                                {success && <b>{success}</b>}
+                                
                                 <p align='center'><input type="submit" name="mechanic_registration" value='Submit'/></p>
                                 <p align='center'>Already have an account?</p>
                                 <p align='center'><Link href='./login'>Login</Link></p>

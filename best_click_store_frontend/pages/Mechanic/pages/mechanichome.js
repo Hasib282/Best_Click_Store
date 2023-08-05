@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import React, { useEffect } from 'react';
-
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 
 const MechanicLayout = dynamic(()=>import('../layouts/mechaniclayout'),{
   ssr:false,
@@ -12,13 +12,27 @@ const Title = dynamic(()=>import('../layouts/title'),{
 })
 
 export default function MechanicHome() {
+  const [email,setEmail] = useState('');
+  const router = useRouter();
   useEffect(() => {
     // Parse the query parameters from the URL
     const urlParams = new URLSearchParams(window.location.search);
-    // Get the value of the 'email' query parameter
+
     const email = urlParams.get('email');
-    // Use the email value as needed
+
+    setEmail(email);
   }, []);
+
+  
+  const handleProfileClick = () => {
+    router.push({
+      pathname: './profile',
+      query: {
+        email: email,
+      },
+    });
+  };
+
    
 
   return (
@@ -27,23 +41,22 @@ export default function MechanicHome() {
       <MechanicLayout>
       
         <section id="mechanichome" >
-            <h1 align='center'>Mechanic Dash Board</h1>
-            <form>
+
+          <h1 align='center'>Mechanic Dash Board</h1>
+          <button onClick={handleProfileClick}>Profile</button>
+          <form>
                 <table>
                     <tr>
-                        <td width={550}>
+                      <td width={550}>
+                        
+                      </td>
+                      <td>
                             
-                        </td>
-                        <td>
                             
-                            
-                        </td>
-                        <td>
-
-                        </td>
+                      </td>
                     </tr>
                 </table>
-            </form>
+          </form>
             
         </section>
       </MechanicLayout>

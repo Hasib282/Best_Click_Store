@@ -111,31 +111,67 @@ export class MechanicController {
     }
     
 
-    //show profile
+    /*//show profile
     @Get('profile')
     @UseGuards(SessionGuard)
     async getProfile(@Session() session) {
         return this.mechanicService.getProfile(session.email);
+    }*/
+
+    @Get('profile')
+    async getProfilebyQuerry(@Query('email')email) {
+        return this.mechanicService.getProfile(email);
     }
 
 
     //Show Profile picture
-    @Get('profilepic')
+    /*@Get('profilepic')
     @UseGuards(SessionGuard)
     async getImages(@Session() session, @Res() res): Promise<any> {
         const profile = await this.mechanicService.getProfile(session.email);
         res.sendFile(profile.profile.mechanic_profilepic, { root: './profile' })
+    }*/
+
+
+
+
+    @Get('profilepic')
+    async getImages(@Query('email') email,@Res() res): Promise<any> {
+        const profile = await this.mechanicService.getProfile(email);
+        res.sendFile(profile.profile.mechanic_profilepic, { root: './profile' })
+        
     }
 
 
     //Update profile data
-    @Put('updateprofile')
+    /*@Put('updateprofile')
     @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
     async updateProfile(@Session() session, @Body() data: MechanicUpdateDTO) {
         const checknid = await this.mechanicService.checkEmail(data.mechanic_nid);
         const checkphone = await this.mechanicService.checkPhone(data.mechanic_phone);
         const profile = await this.mechanicService.getProfile(session.email);
+        if (checknid != null && data.mechanic_nid != profile.mechanic_nid) {
+            throw new HttpException('NID already exist', HttpStatus.CONFLICT);
+        }
+        if (checkphone != null && data.mechanic_phone != profile.mechanic_phone) {
+            throw new HttpException('Phone already exist', HttpStatus.CONFLICT);
+        }
+        else {
+            return this.mechanicService.updateProfile(profile.mechanic_id, data);
+        }
+    }*/
+
+
+
+
+    //Update profile data
+    @Put('updateprofile')
+    @UsePipes(new ValidationPipe())
+    async updateProfile(@Query('email') email, @Body() data: MechanicUpdateDTO) {
+        const checknid = await this.mechanicService.checkEmail(data.mechanic_nid);
+        const checkphone = await this.mechanicService.checkPhone(data.mechanic_phone);
+        const profile = await this.mechanicService.getProfile(email);
         if (checknid != null && data.mechanic_nid != profile.mechanic_nid) {
             throw new HttpException('NID already exist', HttpStatus.CONFLICT);
         }

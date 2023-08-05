@@ -5,7 +5,8 @@ export default function MechanicLayout({children}) {
     return (
       <>
         <MechanicHeader></MechanicHeader>
-        <MechanicNavigation>{children}</MechanicNavigation>
+        {/* <MechanicNavigation></MechanicNavigation> */}
+        {children}
         <Footer></Footer>
       </>
     )

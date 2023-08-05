@@ -26,31 +26,31 @@ export default function Login() {
     };
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Perform form validation
-    if (!email || !password) {
-    setError('Email and password are required');
-    } else if (!isValidEmail(email)) {
-    setError('Invalid email address');
-    } 
-    else {
-        const res = await doLogin(email,password);
-        console.log(res);
+        e.preventDefault();
+        // Perform form validation
+        if (!email || !password) {
+        setError('Email and password are required');
+        } else if (!isValidEmail(email)) {
+        setError('Invalid email address');
+        } 
+        else {
+            const res = await doLogin(email,password);
+            console.log(res);
 
-        if(res==true){
+            if(res==true){
 
-            router.push({
-                pathname: './mechanichome',
-                query: {
-                    email: email
-                },
-            });
+                router.push({
+                    pathname: './mechanichome',
+                    query: {
+                        email: email
+                    },
+                });
+            }
+            else{
+                setError('Email or Password is incorrect');
+            }
         }
-        else{
-            setError('Email or Password is incorrect');
-        }
-    }
-};
+    };
     
 
     async function doLogin(email,password){

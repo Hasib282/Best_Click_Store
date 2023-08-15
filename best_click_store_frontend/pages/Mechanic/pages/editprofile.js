@@ -2,15 +2,17 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import axios from 'axios';
+import { useAuth } from '../authentication/sessionAuthentication';
 
-const MechanicLayout = dynamic(()=>import('../layouts/mechaniclayout'),{
-  ssr:false,
+
+
+const MechanicLayout = dynamic(() => import('../layouts/mechaniclayout'), {
+    ssr: false,
 })
 
-const Title = dynamic(()=>import('../layouts/title'),{
-  ssr:false,
+const Title = dynamic(() => import('../layouts/title'), {
+    ssr: false,
 })
 
 export default function EditProfile() {
@@ -21,6 +23,7 @@ export default function EditProfile() {
     const [mechanic_gender, setGender] = useState('');
     const [mechanic_address, setAddress] = useState('');
     const [success, setSuccess] = useState('');
+    const { user } = useAuth();
 
     //error variables
     const [nameError, setNameError] = useState('');
@@ -30,11 +33,10 @@ export default function EditProfile() {
     const [addressError, setAddressError] = useState('');
     const [error, setError] = useState('');
 
-
     //handle inpute field changes start here
 
     const handleChangeName = (e) => {
-      setName(e.target.value);
+        setName(e.target.value);
     };
     const handleChangePhone = (e) => {
         setPhone(e.target.value);
@@ -51,7 +53,7 @@ export default function EditProfile() {
 
 
 
-    const [email,setEmail] = useState('');
+    const [email, setEmail] = useState('');
     const [jsonData, setJsonData] = useState(null);
 
     useEffect(() => {
@@ -71,14 +73,16 @@ export default function EditProfile() {
             setError(error);
         }
     }
-    
+
 
     async function getProfile(email) {
         try {
-            const response = await axios.get('http://localhost:3000/mechanic/profile?email='+email);
+            const response = await axios.get(process.env.NEXT_PUBLIC_BACKEND_URL + 'profile',{
+                withCredentials: true
+            });
             const jsonData = response.data;
             setJsonData(jsonData);
-            
+
             console.log(jsonData);
 
             setName(jsonData.mechanic_name);
@@ -86,8 +90,7 @@ export default function EditProfile() {
             setPhone(jsonData.mechanic_phone);
             setGender(jsonData.mechanic_gender);
             setAddress(jsonData.mechanic_address);
-            console.log(mechanic_name)
-            
+
         } catch (error) {
             console.error(error);
         }
@@ -96,185 +99,193 @@ export default function EditProfile() {
 
     const handleSubmit = async (e) => {
 
-      e.preventDefault();
+        e.preventDefault();
 
-      // name validation
-      if (!mechanic_name ) {
-          setNameError('Name is required');
-      } 
-      else if(!isValidName(mechanic_name)){
-          setNameError('Name only contain a-z or A-Z or dot(.) or dash(-) and must start with a letter and atleast 2 charecter ');
-      }
-      else{
-          setNameError('');
-      }
+        let formIsValid = true;
 
-
-      // phone validation
-      if (!mechanic_phone) {
-          setPhoneError('Phone is required');
-      }
-      else if (!isValidPhone(mechanic_phone)) {
-          setPhoneError('Please enter a valid 11 digit Phone number');
-      }
-      else{
-          setPhoneError('');
-      }
-      
+        // name validation
+        if (!mechanic_name) {
+            setNameError('Name is required');
+            formIsValid = false;
+        }
+        else if (!isValidName(mechanic_name)) {
+            setNameError('Name only contain a-z or A-Z or dot(.) or dash(-) and must start with a letter and atleast 2 charecter ');
+            formIsValid = false;
+        }
+        else {
+            setNameError('');
+        }
 
 
-      // nid validation
-      if (!mechanic_nid) {
-          setNidError('NID is required');
-      }
-      else if (!isValidNid(mechanic_nid)) {
-          setNidError('Please enter a valid nid');
-      }
-      else{
-          setNidError('');
-      }
+        // phone validation
+        if (!mechanic_phone) {
+            setPhoneError('Phone is required');
+            formIsValid = false;
+        }
+        else if (!isValidPhone(mechanic_phone)) {
+            setPhoneError('Please enter a valid 11 digit Phone number');
+            formIsValid = false;
+        }
+        else {
+            setPhoneError('');
+        }
 
 
-      // gender validation
-      if (!mechanic_gender) {
-          setGenderError('Gender is required');
-      }
-      else{
-          setGenderError('');
-      }
 
-      //address validation
-      if (!mechanic_address) {
-          setAddressError('Address is required');
-      }
-      else{
-          setAddressError('');
-      }
+        // nid validation
+        if (!mechanic_nid) {
+            setNidError('NID is required');
+            formIsValid = false;
+        }
+        else if (!isValidNid(mechanic_nid)) {
+            setNidError('Please enter a valid nid');
+            formIsValid = false;
+        }
+        else {
+            setNidError('');
+        }
 
 
-      if(setNameError == setPhoneError == setGenderError == setAddressError == setNidError == '') {
-          const res = await editProfile(email);
+        // gender validation
+        if (!mechanic_gender) {
+            setGenderError('Gender is required');
+            formIsValid = false;
+        }
+        else {
+            setGenderError('');
+        }
 
-          console.log('Update successfull');
-      }
+        //address validation
+        if (!mechanic_address) {
+            setAddressError('Address is required');
+            formIsValid = false;
+        }
+        else {
+            setAddressError('');
+        }
+
+
+        if (formIsValid) {
+            try {
+                const res = await editProfile();
+
+                setSuccess('Update successfull');
+            }
+            catch (error) {
+                console.log(error);
+                setSuccess("");
+                formIsValid = false;
+            }
+
+        }
+        else {
+            setSuccess("");
+        }
     };
 
 
-    async function editProfile(email) {
-      try {
-        const data = {
-          mechanic_name: mechanic_name,
-          mechanic_phone: mechanic_phone,
-          mechanic_nid: mechanic_nid,
-          mechanic_gender:mechanic_gender,
-          mechanic_address:mechanic_address
-        };
-        const response = await axios.put('http://localhost:3000/mechanic/updateprofile?email='+email, data, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        const updatedData = response.data;
-        console.log(updatedData);
-      } 
-      catch (error) {
-          console.error(error);
-      }
-  }
+    async function editProfile() {
+        try {
+            const data = {
+                mechanic_name: mechanic_name,
+                mechanic_phone: mechanic_phone,
+                mechanic_nid: mechanic_nid,
+                mechanic_gender: mechanic_gender,
+                mechanic_address: mechanic_address
+            };
+            const response = await axios.put(process.env.NEXT_PUBLIC_BACKEND_URL + 'updateprofile?email=' + email, data, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const updatedData = response.data;
+
+        }
+        catch (error) {
+            if (error.response) {
+                if (error.response.data.message === "Phone already exist") {
+                    setPhoneError(error.response.data.message);
+                    setSuccess('');
+                    formIsValid = false;
+                }
+                else if(error.response.data.message === "NID already exist"){
+                    setNidError(error.response.data.message);
+                    setSuccess('');
+                    formIsValid = false;
+                } 
+                else {
+                    console.log(error.response.data.message);
+                    console.log(error);
+                    setSuccess('');
+
+                }
+            }
+            console.log(error);
+        }
+    }
 
 
-  const isValidName = (name) => {
-      const namePattern = /^[a-zA-Z][a-zA-Z\-\.\s]{2,150}$/;
-      return namePattern.test(name);
-  }
-  
-
-
-  const isValidPhone = (phone) => {
-      const phonePattern = /^[0][1][3-9][0-9]{8}$/;
-      return phonePattern.test(phone);
-  }
-
-
-  const isValidNid = (nid) => {
-      const phonePattern = /^[0-9]{10}$/;
-      return phonePattern.test(nid);
-  }
-
-
-
-
-  return (
-    <>
-      <Title page='Edit Profile'></Title>
-      <MechanicLayout>
-      {jsonData !== null && (
-        <div>
-          {Array.isArray(jsonData) ? (
-            <div>
-              <p>Response is an array:</p>
-              <ul>
-                {jsonData.map((item, index) => (
-                <li key={index}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            
-            <section id="editprofile" >
-              <h1 align='center'>Edit Profile</h1>
-              <form onSubmit={handleSubmit}>
-                <table>
-                  <tr>
-                    <td width={550}>
-                    
-                    </td>
-                    <td>
-                      <label for='name'>Name</label><br/>
-                      <input type='text' name='mechanic_name' id='name' defaultValue={jsonData.mechanic_name} onChange={handleChangeName}/>
-                      
-                      <br/>{nameError && <b>{nameError}</b>}<br/>
-                      <label for='nid'>NID</label><br/>
-                      <input type='text' name='mechanic_nid' id='nid' defaultValue={jsonData.mechanic_nid} onChange={handleChangeNid}></input>
-                      <br/>{nidError && <b>{nidError}</b>}<br/>
-                      <label for='phone'>Phone</label><br/>
-                      <input type='text' name='mechanic_phone' id='phone' defaultValue={jsonData.mechanic_phone} onChange={handleChangePhone}></input>
-                      <br/>{phoneError && <b>{phoneError}</b>}<br/>
-                      <label> Gender</label><br/>
-                      <label>
-                        <input type="radio" name='mechanic_gender' defaultValue='Male' checked={jsonData.mechanic_gender === "Male"} onChange={handleChangeGender}></input>Male
-                      </label>
-                      <label>
-                        <input type="radio" name='mechanic_gender' defaultValue='Female' checked={jsonData.mechanic_gender === "Female"} onChange={handleChangeGender}></input>Female
-                      </label>
-                      <label>
-                        <input type="radio" name='mechanic_gender' defaultValue='Others' checked={jsonData.mechanic_gender === "Others"} onChange={handleChangeGender}></input>Others
-                      </label><br/>{genderError && <b>{genderError}</b>}<br/>
-                      <label for='address'>Address</label><br/>
-                      <input type='text' name='mechanic_address' id='address' defaultValue={jsonData.mechanic_address} onChange={handleChangeAddress}></input>
-                      <br/>{addressError && <b>{addressError}</b>}<br/>
-
-                      <p align='center'><input type="submit" name="editprofile" value='Submit'></input></p>
-
-                      {error && <b>{error}</b>}
-                    </td>
-                    <td >
-                        
-                    </td>
-                  </tr>
-                </table>
-              </form>
-              <p align='right'><Link href='./mechanichome'>Back</Link></p>
-            </section>
+    const isValidName = (name) => {
+        const namePattern = /^[a-zA-Z][a-zA-Z\-\.\s]{2,150}$/;
+        return namePattern.test(name);
+    }
 
 
 
-            
-          )}
-        </div>
-      )}
-        
-      </MechanicLayout>
-    </>
-  )
+    const isValidPhone = (phone) => {
+        const phonePattern = /^[0][1][3-9][0-9]{8}$/;
+        return phonePattern.test(phone);
+    }
+
+
+    const isValidNid = (nid) => {
+        const phonePattern = /^[0-9]{10}$/;
+        return phonePattern.test(nid);
+    }
+
+
+    return (
+        <>
+            <Title page='Edit Profile'></Title>
+            <MechanicLayout>
+                {jsonData !== null && (
+                    <div >
+                        <h1 align='center' className="text-4xl pt-4">Edit Profile</h1>
+                        <div className="detaills w-full float-left justify-center align-items-center flex flex-row  mt-10">
+                            <form onSubmit={handleSubmit}>
+                                <label htmlFor='name'>Name</label><br />
+                                <input type='text' name='mechanic_name' id='name' defaultValue={mechanic_name} onChange={handleChangeName} className="input input-bordered w-full max-w-xs" />
+
+                                <br />{nameError && <b className="text-red-500">{nameError}</b>}<br />
+                                <label htmlFor='nid'>NID</label><br />
+                                <input type='text' name='mechanic_nid' id='nid' defaultValue={mechanic_nid} onChange={handleChangeNid} className="input input-bordered w-full max-w-xs" ></input>
+                                <br />{nidError && <b className="text-red-500">{nidError}</b>}<br />
+                                <label htmlFor='phone'>Phone</label><br />
+                                <input type='text' name='mechanic_phone' id='phone' defaultValue={mechanic_phone} onChange={handleChangePhone} className="input input-bordered w-full max-w-xs" ></input>
+                                <br />{phoneError && <b className="text-red-500">{phoneError}</b>}<br />
+                                <label> Gender</label><br />
+                                <label htmlFor="male" className="text-xl">
+                                    <input type="radio" name='mechanic_gender' value='Male' id="male" checked={mechanic_gender === "Male"} onChange={handleChangeGender} className="radio radio-info" ></input> Male
+                                </label>
+                                <label htmlFor="female">
+                                    <input type="radio" name='mechanic_gender' value='Female' id="female" checked={mechanic_gender === "Female"} onChange={handleChangeGender} className="radio radio-info" ></input> Female
+                                </label>
+                                <label htmlFor="others">
+                                    <input type="radio" name='mechanic_gender' value='Others' id="others" checked={mechanic_gender === "Others"} onChange={handleChangeGender} className="radio radio-info" ></input> Others
+                                </label><br />{genderError && <b className="text-red-500">{genderError}</b>}<br />
+                                <label htmlFor='address'>Address</label><br />
+                                <input type='text' name='mechanic_address' id='address' defaultValue={mechanic_address} onChange={handleChangeAddress} className="input input-bordered w-full max-w-xs" ></input>
+                                <br />{addressError && <b className="text-red-500">{addressError}</b>}{success && <b className="text-green-500">{success}</b>}<br />
+                                <p align="center"><button type="submit" className="btn bg-cyan-400 hover:bg-cyan-300">Update</button></p>
+
+
+                                {error && <b>{error}</b>}
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+            </MechanicLayout>
+        </>
+    )
 }

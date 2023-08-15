@@ -60,7 +60,8 @@ export class MechanicService {
 
     //Check nid existance
     async checkNid(nid): Promise<MechanicEntity> {
-        return this.mechanicRepo.findOneBy({ mechanic_nid: nid });
+        return await this.mechanicRepo.findOneBy({ mechanic_nid: nid });
+
     }
 
     //Check phone existance
@@ -97,6 +98,11 @@ export class MechanicService {
     }
 
 
+    getMechanicById(id) {
+        return this.mechanicRepo.findOne({ where: { mechanic_id:id }, relations: { profile: true, services: true, } });
+    }
+
+
     //Show Mechanic Profile
     getProfile(email) {
         return this.mechanicRepo.findOne({
@@ -107,6 +113,24 @@ export class MechanicService {
             }
         });
     }
+
+    //update mechanic Profile picture
+    async updateProfilePicture(email, profile: Express.Multer.File): Promise<string> {
+        console.log(email);
+        const mechanic = await this.mechanicRepo.findOne({ where: { mechanic_email: email }, relations: { profile: true } });
+        const data = profile.filename;
+        const update = await this.mechanicProfileRepo.update(mechanic.mechanic_id, { mechanic_profilepic: data });
+        console.log(update);
+        return data;
+    }
+
+
+
+
+
+
+
+
 
 
     //Update Mechanic Profile

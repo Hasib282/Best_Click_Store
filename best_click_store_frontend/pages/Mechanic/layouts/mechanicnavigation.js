@@ -1,26 +1,63 @@
 import Link from "next/link";
-
+import React, { useEffect, useState } from 'react';
+import { useRouter } from "next/router";
+import { useAuth } from '../authentication/sessionAuthentication';
 export default function MechanicNavigation({children}) {
+    const [email,setEmail] = useState('');
+    const router = useRouter();
+    const { user } = useAuth();
+    // useEffect(() => {
+    //     fetchEmail();
+    // }, []);
+
+
+    //Get email from url
+    // async function fetchEmail() {
+    //     try {
+    //         const urlParams = new URLSearchParams(window.location.search);
+    //         const emails = urlParams.get('email');
+    //         setEmail(emails);
+    //     } catch (error) {
+    //         console.error(error);
+    //     }
+    // }
+
+    //Back to home route
+    const handleBack = () => {
+        router.push('./mechanichome');
+    };
+
+    
+
     return (
       <>
-        <table width={1100}>
-            <tr>
-                <td>
-                    <ul>
-                        <li><Link href='./profile?email={email}'>Profile</Link></li>
-                        <li><Link href='./addservice'>Add Service</Link></li>
-                        <li><Link href='./changepass'>Change Password</Link></li>
-                        <li><Link href='./changeprofilepic'>Change Profile Pic</Link></li>
-                        <li><Link href='./editprofile'>Edit Profile</Link></li>
-                        <li><Link href='./chat'>Chat</Link></li>
-                        <li><Link href='./showservice'>Show Service</Link></li>
-                    </ul>
-                </td>
-                <td>
+        <div className="drawer lg:drawer-open">
+            <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
+            <div className="drawer-content ">
+                <section className="navigation w-full float-left bg-cyan-200 pb-20 relative" >
+                    {/* Page content here */}
                     {children}
-                </td>
-            </tr>
-        </table>
+                    <div className="detaills w-full float-left flex flex-col items-end justify-right absolute bottom-5 right-5">
+                        <button onClick={handleBack} className="btn bg-cyan-400 hover:bg-cyan-300" >Back</button>
+                    </div>
+                </section>
+                            
+            </div> 
+            <div className="drawer-side">
+                <label htmlFor="my-drawer-2" className="drawer-overlay"></label> 
+                <ul className="nav w-60 h-full bg-cyan-300 text-base-content">
+                    {/* Sidebar content here */}
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./profile`}>Profile</Link></li>
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./addservice`}>Add Service</Link></li>
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./changepass`}>Change Password</Link></li>
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./changeprofilepic`}>Change Profile Pic</Link></li>
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./editprofile`}>Edit Profile</Link></li>
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./chat`}>Chat</Link></li>
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./showservice`}>Show Service</Link></li>
+                    <li className="p-4 hover:bg-cyan-500"><Link href={`./mechanics`}>Mechanics</Link></li>
+                </ul>
+            </div>
+        </div>
       </>
     )
   }

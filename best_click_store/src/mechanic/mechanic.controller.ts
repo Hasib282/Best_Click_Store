@@ -1,4 +1,4 @@
-import { Body, Delete, Get, HttpException, Param, ParseIntPipe, Patch, Post, Put, Query, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes } from "@nestjs/common";
+import { Body, Delete, Get, HttpException, Param, ParseIntPipe, Patch, Post, Put, Query, Req, Res, Session, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors, UsePipes } from "@nestjs/common";
 import { HttpStatus } from "@nestjs/common";
 import { ValidationPipe } from "@nestjs/common";
 import { Controller } from "@nestjs/common";
@@ -106,22 +106,27 @@ export class MechanicController {
 
     //Show all mechanice
     @Get('mechanics')
-    async getAllCustomer() {
+    async getAllMechanics() {
         return this.mechanicService.getAllMechanics();
+    }
+
+    @Get('mechanic/:id')
+    async getMechanicById(@Param('id', ParseIntPipe)id) {
+        return this.mechanicService.getMechanicById(id);
     }
     
 
-    /*//show profile
+    //show profile
     @Get('profile')
     @UseGuards(SessionGuard)
     async getProfile(@Session() session) {
         return this.mechanicService.getProfile(session.email);
-    }*/
+    }
 
-    @Get('profile')
+    /*@Get('profile')
     async getProfilebyQuerry(@Query('email')email) {
         return this.mechanicService.getProfile(email);
-    }
+    }*/
 
 
     //Show Profile picture
@@ -135,11 +140,34 @@ export class MechanicController {
 
 
 
-    @Get('profilepic')
-    async getImages(@Query('email') email,@Res() res): Promise<any> {
-        const profile = await this.mechanicService.getProfile(email);
-        res.sendFile(profile.profile.mechanic_profilepic, { root: './profile' })
-        
+    @Get('profilepic/:name')
+    async getImages(@Param('name') name, @Res() res): Promise<any> {
+        res.sendFile(name, { root: './profile' })
+    }
+
+
+    @Put('changeprofile')
+    @UseInterceptors(FileInterceptor('profile',
+        {
+            fileFilter: (req, file, cb) => {
+                if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
+                    cb(null, true);
+                else {
+                    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
+                }
+            },
+            limits: { fileSize: 300000 },
+            storage: diskStorage({
+                destination: './profile',
+                filename: function (req, file, cb) {
+                    cb(null, Date.now() + file.originalname)
+                },
+            })
+        }
+    ))
+    async updateProfilePicture(@Query('email') email,@UploadedFile() changeprofile: Express.Multer.File): Promise<string> {
+        return await this.mechanicService.updateProfilePicture(email, changeprofile);
+         
     }
 
 
@@ -169,14 +197,14 @@ export class MechanicController {
     @Put('updateprofile')
     @UsePipes(new ValidationPipe())
     async updateProfile(@Query('email') email, @Body() data: MechanicUpdateDTO) {
-        const checknid = await this.mechanicService.checkEmail(data.mechanic_nid);
+        const checknid = await this.mechanicService.checkNid(data.mechanic_nid);
         const checkphone = await this.mechanicService.checkPhone(data.mechanic_phone);
         const profile = await this.mechanicService.getProfile(email);
         if (checknid != null && data.mechanic_nid != profile.mechanic_nid) {
-            throw new HttpException('NID already exist', HttpStatus.CONFLICT);
+            throw new HttpException('NID already exist', HttpStatus.BAD_REQUEST);
         }
         if (checkphone != null && data.mechanic_phone != profile.mechanic_phone) {
-            throw new HttpException('Phone already exist', HttpStatus.CONFLICT);
+            throw new HttpException('Phone already exist', HttpStatus.BAD_REQUEST);
         }
         else {
             return this.mechanicService.updateProfile(profile.mechanic_id, data);
@@ -185,7 +213,7 @@ export class MechanicController {
 
 
     //Change password
-    @Patch('changepass')
+    /*@Patch('changepass')
     @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe)
     async updatePass(@Session() session, @Body() data: MechanicUpdatePassDTO): Promise<any> {
@@ -206,7 +234,33 @@ export class MechanicController {
             throw new HttpException('Old Password doesnt match', HttpStatus.NOT_ACCEPTABLE);
         }
 
+    }*/
+
+
+
+
+    //Change password
+    @Put('changepass')
+    @UsePipes(new ValidationPipe)
+    async updatePass(@Query('email') email, @Body() data: MechanicUpdatePassDTO): Promise<any> {
+        const profile = await this.mechanicService.getProfile(email);
+        const oldpass = await this.mechanicService.verifyPassword(profile.mechanic_id, data);
+        if (oldpass == true) {
+            if (data.new_password != data.confirm_password) {
+                throw new HttpException('New Password and confirm Password doesnt match', HttpStatus.NOT_ACCEPTABLE);
+            }
+            if (data.old_password == data.new_password) {
+                throw new HttpException('New Password and old Password cant be same', HttpStatus.BAD_REQUEST);
+            }
+            else {
+                return this.mechanicService.changePassword(profile.profile.mechanic_id, data.confirm_password);
+            }
+        }
+        else {
+            throw new HttpException('Old Password doesnt match', HttpStatus.NOT_ACCEPTABLE);
+        }
     }
+
 
 
     //delete mechanic profile
@@ -215,6 +269,19 @@ export class MechanicController {
     async deleteMechanic(@Session() session) {
         const profile = await this.mechanicService.getProfile(session.email);
         return this.mechanicService.deleteProfile(profile.mechanic_id);
+    }
+
+
+
+    //Logout
+    @Post('logout')
+    signout(@Req() req) {
+        if (req.session.destroy()) {
+            return true;
+        }
+        else {
+            throw new HttpException("invalid actions", HttpStatus.UNAUTHORIZED);
+        }
     }
 
     
@@ -246,9 +313,7 @@ export class MechanicController {
         if (!service) {
             throw new HttpException('Servic not available', HttpStatus.NOT_FOUND);
         }
-        return service;
-        
-        
+        return service; 
     }
 
 

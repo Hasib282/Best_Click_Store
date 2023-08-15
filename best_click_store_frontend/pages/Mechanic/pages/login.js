@@ -3,66 +3,69 @@ import Link from "next/link";
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
+import { useAuth } from '../authentication/sessionAuthentication';
 
-const Layout = dynamic(()=>import('../layouts/layout'),{
-  ssr:false,
+const Layout = dynamic(() => import('../layouts/layout'), {
+    ssr: false,
 })
 
-const Title = dynamic(()=>import('../layouts/title'),{
-  ssr:false,
+const Title = dynamic(() => import('../layouts/title'), {
+    ssr: false,
 })
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const { login } = useAuth();
     const router = useRouter();
 
     const handleChangeEmail = (e) => {
-    setEmail(e.target.value);
+        setEmail(e.target.value);
     };
     const handleChangePassword = (e) => {
-    setPassword(e.target.value);
+        setPassword(e.target.value);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         // Perform form validation
         if (!email || !password) {
-        setError('Email and password are required');
+            setError('Email and password are required');
         } else if (!isValidEmail(email)) {
-        setError('Invalid email address');
-        } 
+            setError('Invalid email address');
+        }
         else {
-            const res = await doLogin(email,password);
+            const res = await doLogin(email, password);
             console.log(res);
-
-            if(res==true){
-
-                router.push({
-                    pathname: './mechanichome',
-                    query: {
-                        email: email
-                    },
-                });
-            }
-            else{
-                setError('Email or Password is incorrect');
-            }
         }
     };
-    
 
-    async function doLogin(email,password){
-        try{
-            const response = await axios.post('http://localhost:3000/mechanic/login',{
+
+    async function doLogin(email, password) {
+        try {
+            const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL + 'login', {
                 email,
                 password
+            }, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                withCredentials: true
             });
-            console.log(response.status)
+            if (response.data == true) {
+                console.log("cookie: " + document.cookie);
+                login(email, document.cookie);
+                router.push('./mechanichome');
+            }
+            else {
+                setError('Email or Password is incorrect');
+            }
+
+            console.log("response: " + response)
+
+            console.log(response.data)
             return response.data;
         }
-        catch(error){
+        catch (error) {
             console.error('Login Failed:', error)
         }
     }
@@ -71,46 +74,39 @@ export default function Login() {
 
 
     const isValidEmail = (email) => {
-    const emailPattern = /^\S+@\S+\.\S+$/;
-    return emailPattern.test(email);
+        const emailPattern = /^\S+@\S+\.\S+$/;
+        return emailPattern.test(email);
     }
 
 
-  return (
-    
-    <>
-      <Title page='Login'></Title>
-      <Layout>
-        <section id="login" >
-            <h1 align='center'>Login</h1>
-            <form onSubmit={handleSubmit}>
-                <table>
-                    <tr>
-                        <td width={550}>
-                            
-                        </td>
-                        <td>
-                            <label for='email'>Email</label><br/>
-                            <input type='text' name='email' id='email' onChange={handleChangeEmail}/><br/><br/>
-                            
-                            <label for='password'>Password</label><br/>
-                            <input type='text' name='password' id='password' onChange={handleChangePassword}/><br/><br/>
-                            <Link href='./forgetpass'>Forget Password?</Link><br/>
-                            {error && <p>{error}</p>}
-                            <p align='center'><input type="submit" name="login" value='Login'/></p>
+    return (
+
+        <>
+            <Title page='Login'></Title>
+            <Layout>
+                <section id="login" className="navigation w-full h-full float-left bg-teal-400 pb-20 justify-center align-items-center flex flex-row " >
+                    <form onSubmit={handleSubmit}>
+                        <div className="detaills w-full bg-teal-500 mt-10 px-20 py-10 rounded-xl">
+                            <h1 align='center' className="text-4xl pb-4">Login</h1>
+                            <label htmlFor='email'>Email</label><br />
+                            <input type='text' name='email' id='email' onChange={handleChangeEmail} placeholder="Type your Email" className="input input-bordered input-sm w-full max-w-xs" /><br /><br />
+
+                            <label htmlFor='password'>Password</label><br />
+                            <input type='password' name='password' id='password' onChange={handleChangePassword} placeholder="Type Your Password" className="input input-bordered input-sm w-full max-w-xs" />
+                            <br />{error && <p className="text-red-700">{error}</p>}<br />
+                            <Link href='./forgetpass'>Forget Password?</Link><br />
+
+                            <p align="center"><button type="submit" name="login" className="btn bg-teal-700 hover:bg-teal-600 m-5 border-none">Login</button></p>
                             <p align='center'>Don't have an account?</p>
                             <p align='center'><Link href='./registration'>Register now!</Link></p>
-                            
-                        </td>
-                        <td>
 
-                        </td>
-                    </tr>
-                </table>
-            </form>
-            
-        </section>
-      </Layout>
-    </>
-  )
+                        </div>
+
+
+                    </form>
+
+                </section>
+            </Layout>
+        </>
+    )
 }

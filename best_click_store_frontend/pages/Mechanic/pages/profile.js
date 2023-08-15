@@ -4,19 +4,21 @@ import Image from "next/image";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
+import { useAuth } from '../authentication/sessionAuthentication';
 
-const MechanicLayout = dynamic(()=>import('../layouts/mechaniclayout'),{
-  ssr:false,
+const MechanicLayout = dynamic(() => import('../layouts/mechaniclayout'), {
+    ssr: false,
 })
 
-const Title = dynamic(()=>import('../layouts/title'),{
-  ssr:false,
+const Title = dynamic(() => import('../layouts/title'), {
+    ssr: false,
 })
 
 export default function Profile() {
-    const [email,setEmail] = useState('');
+    const [email, setEmail] = useState('');
     const [jsonData, setJsonData] = useState(null);
     const router = useRouter();
+    const { user } = useAuth();
 
     useEffect(() => {
         fetchEmail();
@@ -34,23 +36,25 @@ export default function Profile() {
             console.error(error);
         }
     }
-    
+
 
     async function getProfile(email) {
         try {
-            const response = await axios.get('http://localhost:3000/mechanic/profile?email='+email);
+            const response = await axios.get(process.env.NEXT_PUBLIC_BACKEND_URL + 'profile' ,{
+                withCredentials: true
+            });
             const jsonData = response.data;
             setJsonData(jsonData);
-            
+
             console.log(jsonData);
-            
+
         } catch (error) {
             console.error(error);
         }
     }
 
-    
-    
+
+
     //edit profile route
     const handleEditProfile = () => {
         router.push({
@@ -60,213 +64,86 @@ export default function Profile() {
             },
         });
     };
-    
-    
-        
+
+
+    //Back to home route
+    const handleBack = () => {
+        router.push({
+            pathname: './mechanichome',
+            query: {
+                email: email,
+            },
+        });
+    };
 
 
 
-  return (
-    <>
-      <Title page='Profile'></Title>
-      <MechanicLayout>
+    //change password route
+    const handleChangeProfilePic = () => {
+        router.push({
+            pathname: './changeprofilepic',
+            query: {
+                email: email,
+            },
+        });
+    };
 
-        {jsonData !== null && (
-                <div>
-                    {Array.isArray(jsonData) ? (
-                        <div>
-                            <p>Response is an array:</p>
-                            <ul>
-                                {jsonData.map((item, index) => (
-                                    <li key={index}>{item}</li>
-                                ))}
-                            </ul>
+
+
+
+
+    return (
+        <>
+            <Title page='Profile'></Title>
+            <MechanicLayout>
+
+                {jsonData !== null && (
+                    <div >
+                        <h1 align='center' className="text-4xl mt-4">Profile</h1>
+                        <div className="detaills w-8/12 float-left justify-center align-items-center flex flex-row  mt-10">
+                            <div className="w-2/12 float-left">
+                                <p>Name:</p><br />
+                                <p>Email:</p><br />
+                                <p>Phone:</p><br />
+                                <p>NID:</p><br />
+                                <p>Gender: </p><br />
+                                <p>Address:</p><br />
+                                <p>Services:</p><br />
+                            </div>
+                            <div className="w-4/12 float-left">
+                                <p>{jsonData.mechanic_name}</p><br />
+                                <p>{jsonData.mechanic_email}</p><br />
+                                <p>{jsonData.mechanic_phone}</p><br />
+                                <p>{jsonData.mechanic_nid}</p><br />
+                                <p>{jsonData.mechanic_gender}</p><br />
+                                <p>{jsonData.mechanic_address}</p><br />
+                                <p>
+                                    <ul>
+                                        {jsonData.services.map((service) => (
+                                            <li>
+                                                {service.service_name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </p><br />
+                            </div>
+
                         </div>
-                    ) : (
-                        <div>
-                            <section id="profile" >
-                            <h1 align='center'>Profile</h1>
-                                <table>
-                                    <tr>
-                                        <td>
-                                            Name: 
-                                        </td>
-                                        <td>
-                                            {jsonData.mechanic_name}
-                                        </td>
-                                        <td rowSpan={7}>
-                                            {/* {jsonData.profile.mechanic_profilepic}
-                                            <Image src='' alt="profilepic" width={400} height={300}></Image>  */}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            Email: 
-                                        </td>
-                                        <td>
-                                            {jsonData.mechanic_email}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            Phone: 
-                                        </td>
-                                        <td>
-                                            {jsonData.mechanic_phone}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            NID: 
-                                        </td>
-                                        <td>
-                                            {jsonData.mechanic_email}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            Gender: 
-                                        </td>
-                                        <td>
-                                            {jsonData.mechanic_gender}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            Address: 
-                                        </td>
-                                        <td>
-                                            {jsonData.mechanic_address}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            Services: 
-                                        </td>
-                                        <td>
-                                            <ul>
-                                                {jsonData.services.map((service) => (
-                                                    <li>
-                                                        {service.service_name}
-                                                    </li>
-                                                ))} 
-                                            </ul>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td colSpan={3}>
-                                            <button onClick={handleEditProfile}>Edit Profile</button> 
-                                        </td>
-                                        <td>
-                                        <Link href='./changeprofilepic'>Change Profile Picture</Link>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td colSpan={3}>
-                                            <br/>
-                                            <Link href='./changepass'>Change Password</Link> 
-                                        </td>
-                                    </tr>
-                                </table>
-                                <p align='right'><Link href='./mechanichome'>Back</Link></p>
-                                
-                            
-                            </section>
-                            
+
+                        <div className="detaills float-left w-4/12 mt-28">
+                            <div className="image">
+                                <img src={process.env.NEXT_PUBLIC_BACKEND_URL + 'profilepic/' + jsonData.profile.mechanic_profilepic} width={200} height={200}></img>
+                                <button onClick={handleChangeProfilePic} className="btn mt-1 bg-cyan-400 hover:bg-cyan-300" >Change Profile Picture</button>
+                            </div>
                         </div>
-                    )}
-                </div>
-            )
-        }
+                        <div className="w-8/12 float-left flex flex-col items-center justify-center">
+                            <button onClick={handleEditProfile} className="btn bg-cyan-400 hover:bg-cyan-300">Edit Profile</button>
+                        </div>
+                    </div>
+                )
+                }
 
-
-        
-        {/* <section id="profile" >
-            <h1 align='center'>Profile</h1>
-                <table>
-                    <tr>
-                        <td>
-                            Name: 
-                        </td>
-                        <td>
-                            Hasibur Rahaman
-                        </td>
-                        <td rowSpan={7}>........</td>
-                        <td rowSpan={7}>
-                            <Link href='/'><Image src="/images/profile.jpg" alt="profile.jpg" width={400} height={300}></Image></Link>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Email: 
-                        </td>
-                        <td>
-                            hasiburrahaman81098@gmail.com
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Phone: 
-                        </td>
-                        <td>
-                            01314353560
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            NID: 
-                        </td>
-                        <td>
-                            8714231793
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Gender: 
-                        </td>
-                        <td>
-                            Male
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Address: 
-                        </td>
-                        <td>
-                            Bashundhara, Dhaka
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Services: 
-                        </td>
-                        <td>
-                            <ol>
-                                <li>AC Repairing</li>
-                                <li>Fridge Repairing</li>
-                            </ol>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colSpan={3}>
-                            <button onClick={handleEditProfile}>Edit Profile</button> 
-                        </td>
-                        <td>
-                        <Link href='./changeprofilepic'>Change Profile Picture</Link>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colSpan={3}>
-                            <br/>
-                            <Link href='./changepass'>Change Password</Link> 
-                        </td>
-                    </tr>
-                </table>
-                <p align='right'><Link href='./mechanichome'>Back</Link></p>
-                
-            
-        </section> */}
-      </MechanicLayout>
-    </>
-  )
+            </MechanicLayout>
+        </>
+    )
 }
